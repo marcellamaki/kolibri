@@ -28,6 +28,7 @@
     },
     computed: {
       fileOptions() {
+        console.log(this.files);
         return this.files.map(file => {
           const label = getFilePresetString(file);
           return {

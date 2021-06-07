@@ -59,63 +59,11 @@
         @updateProgress="updateExerciseProgress"
         @updateContentState="updateContentState"
       />
+      <SidePanel />
     </template>
     <KCircularLoader v-else />
 
-    <!-- TODO consolidate this metadata table with coach/lessons -->
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <p dir="auto" v-html="description"></p>
-
-
-    <section class="metadata">
-      <!-- TODO: RTL - Do not interpolate strings -->
-      <p v-if="content.author">
-        {{ $tr('author', { author: content.author }) }}
-      </p>
-      <p v-if="licenseShortName">
-        {{ $tr('license', { license: licenseShortName }) }}
-
-        <template v-if="licenseDescription">
-          <KIconButton
-            :icon="licenceDescriptionIsVisible ? 'chevronUp' : 'chevronDown'"
-            :ariaLabel="$tr('toggleLicenseDescription')"
-            size="small"
-            type="secondary"
-            @click="licenceDescriptionIsVisible = !licenceDescriptionIsVisible"
-          />
-          <div v-if="licenceDescriptionIsVisible" dir="auto" class="license-details">
-            <p class="license-details-name">
-              {{ licenseLongName }}
-            </p>
-            <p>{{ licenseDescription }}</p>
-          </div>
-        </template>
-      </p>
-
-      <p v-if="content.license_owner">
-        {{ $tr('copyrightHolder', { copyrightHolder: content.license_owner }) }}
-      </p>
-    </section>
-
-    <div>
-
-      <DownloadButton
-        v-if="canDownload"
-        :files="downloadableFiles"
-        :nodeTitle="content.title"
-        class="download-button"
-      />
-
-      <KButton
-        v-if="canShare"
-        :text="$tr('shareFile')"
-        class="share-button"
-        @click="launchIntent()"
-      />
-
-    </div>
-
-    <slot name="below_content">
+    <!-- <slot name="below_content">
       <template v-if="content.next_content">
         <h2>{{ $tr('nextResource') }}</h2>
         <ContentCardGroupCarousel
@@ -131,7 +79,7 @@
           :contents="recommended"
         />
       </template>
-    </slot>
+    </slot> -->
 
     <MasteredSnackbars
       v-if="progress >= 1 && wasIncomplete"
@@ -152,21 +100,14 @@
   import { ContentNodeResource } from 'kolibri.resources';
   import router from 'kolibri.coreVue.router';
   import CoachContentLabel from 'kolibri.coreVue.components.CoachContentLabel';
-  import DownloadButton from 'kolibri.coreVue.components.DownloadButton';
-  import { isEmbeddedWebView } from 'kolibri.utils.browserInfo';
-  import { shareFile } from 'kolibri.utils.appCapabilities';
-  import markdownIt from 'markdown-it';
-  import {
-    licenseShortName,
-    licenseLongName,
-    licenseDescriptionForConsumer,
-  } from 'kolibri.utils.licenseTranslations';
-  import { PageNames, PageModes, ClassesPageNames } from '../constants';
+  // import { shareFile } from 'kolibri.utils.appCapabilities';
+  import { PageNames, ClassesPageNames } from '../constants';
   import { updateContentNodeProgress } from '../modules/coreLearn/utils';
   import PageHeader from './PageHeader';
-  import ContentCardGroupCarousel from './ContentCardGroupCarousel';
+  // import ContentCardGroupCarousel from './ContentCardGroupCarousel';
   import AssessmentWrapper from './AssessmentWrapper';
   import MasteredSnackbars from './MasteredSnackbars';
+  import SidePanel from './SidePanel';
   import { lessonResourceViewerLink } from './classes/classPageLinks';
   import commonLearnStrings from './commonLearnStrings';
 
@@ -177,33 +118,33 @@
       if (this.pageName === ClassesPageNames.LESSON_RESOURCE_VIEWER) {
         return {};
       }
-      return {
-        title: this.$tr('documentTitle', {
-          contentTitle: this.content.title,
-          channelTitle: this.channel.title,
-        }),
-      };
+      // return {
+      //   title: this.$tr('documentTitle', {
+      //     contentTitle: this.content.title,
+      //     channelTitle: this.channel.title,
+      //   }),
+      // };
     },
     components: {
       CoachContentLabel,
       PageHeader,
-      ContentCardGroupCarousel,
-      DownloadButton,
+      // ContentCardGroupCarousel,
       AssessmentWrapper,
       MasteredSnackbars,
+      SidePanel,
     },
     mixins: [commonLearnStrings],
     data() {
       return {
         wasIncomplete: false,
-        licenceDescriptionIsVisible: false,
+        // licenceDescriptionIsVisible: false,
         sessionReady: false,
       };
     },
     computed: {
-      ...mapGetters(['isUserLoggedIn', 'facilityConfig', 'pageMode', 'currentUserId']),
+      ...mapGetters(['isUserLoggedIn', 'currentUserId']),
       ...mapState(['pageName']),
-      ...mapState('topicsTree', ['content', 'channel', 'recommended']),
+      ...mapState('topicsTree', ['content']),
       ...mapState('topicsTree', {
         contentId: state => state.content.content_id,
         contentNodeId: state => state.content.id,
@@ -220,30 +161,9 @@
       isTopic() {
         return this.content.kind === ContentNodeKinds.TOPIC;
       },
-      canDownload() {
-        if (this.facilityConfig.show_download_button_in_learn && this.content) {
-          return (
-            this.downloadableFiles.length &&
-            this.content.kind !== ContentNodeKinds.EXERCISE &&
-            !isEmbeddedWebView
-          );
-        }
-        return false;
-      },
-      canShare() {
-        let supported_types = ['mp4', 'mp3', 'pdf', 'epub'];
-        return shareFile && supported_types.includes(this.primaryFile.extension);
-      },
-      description() {
-        if (this.content && this.content.description) {
-          const md = new markdownIt({ breaks: true });
-          return md.render(this.content.description);
-        }
-        return '';
-      },
-      recommendedText() {
-        return this.learnString('recommendedLabel');
-      },
+      // recommendedText() {
+      //   return this.learnString('recommendedLabel');
+      // },
       progress() {
         if (this.isUserLoggedIn) {
           // if there no attempts for this exercise, there is no progress
@@ -254,20 +174,18 @@
         }
         return this.sessionProgress;
       },
-      showRecommended() {
-        return (
-          this.recommended && this.recommended.length && this.pageMode === PageModes.RECOMMENDED
-        );
-      },
-      downloadableFiles() {
-        return this.content.files.filter(file => !file.preset.endsWith('thumbnail'));
-      },
-      primaryFile() {
-        return this.content.files.filter(file => !file.preset.supplementary)[0];
-      },
-      primaryFilename() {
-        return `${this.primaryFile.checksum}.${this.primaryFile.extension}`;
-      },
+      // showRecommended() {
+      //   return (
+      //     this.recommended && this.recommended.length && this.pageMode === PageModes.RECOMMENDED
+      //   );
+      // },
+      // downlaunchIntent
+      // primaryFile() {
+      //   return this.content.files.filter(file => !file.preset.supplementary)[0];
+      // },
+      // primaryFilename() {
+      //   return `${this.primaryFile.checksum}.${this.primaryFile.extension}`;
+      // },
       nextContentLink() {
         // HACK Use a the Resource Viewer Link instead
         if (this.pageName === ClassesPageNames.LESSON_RESOURCE_VIEWER) {
@@ -280,18 +198,6 @@
               : PageNames.TOPICS_CONTENT,
           params: { id: this.content.next_content.id },
         };
-      },
-      licenseShortName() {
-        return licenseShortName(this.content.license_name);
-      },
-      licenseLongName() {
-        return licenseLongName(this.content.license_name);
-      },
-      licenseDescription() {
-        return licenseDescriptionForConsumer(
-          this.content.license_name,
-          this.content.license_description
-        );
       },
     },
     created() {
@@ -350,33 +256,33 @@
       markAsComplete() {
         this.wasIncomplete = false;
       },
-      genContentLink(id, isLeaf) {
-        return {
-          name: isLeaf ? PageNames.TOPICS_CONTENT : PageNames.TOPICS_TOPIC,
-          params: { id },
-        };
-      },
-      launchIntent() {
-        return shareFile({
-          filename: this.primaryFilename,
-          message: this.$tr('shareMessage', {
-            title: this.content.title,
-            topic: this.content.breadcrumbs.slice(-1)[0].title,
-            copyrightHolder: this.content.license_owner,
-          }),
-        }).catch(() => {});
-      },
+      // genContentLink(id, isLeaf) {
+      //   return {
+      //     name: isLeaf ? PageNames.TOPICS_CONTENT : PageNames.TOPICS_TOPIC,
+      //     params: { id },
+      //   };
+      // },
+      // launchIntent() {
+      //   return shareFile({
+      //     filename: this.primaryFilename,
+      //     message: this.$tr('shareMessage', {
+      //       title: this.content.title,
+      //       topic: this.content.breadcrumbs.slice(-1)[0].title,
+      //       copyrightHolder: this.content.license_owner,
+      //     }),
+      //   }).catch(() => {});
+      // },
     },
-    $trs: {
-      author: 'Author: {author}',
-      license: 'License: {license}',
-      toggleLicenseDescription: 'Toggle license description',
-      copyrightHolder: 'Copyright holder: {copyrightHolder}',
-      shareMessage: '"{title}" (in "{topic}"), from {copyrightHolder}',
-      nextResource: 'Next resource',
-      documentTitle: '{ contentTitle } - { channelTitle }',
-      shareFile: 'Share',
-    },
+    // $trs: {
+    // author: 'Author: {author}',
+    // license: 'License: {license}',
+    // toggleLicenseDescription: 'Toggle license description',
+    // copyrightHolder: 'Copyright holder: {copyrightHolder}',
+    // shareMessage: '"{title}" (in "{topic}"), from {copyrightHolder}',
+    // nextResource: 'Next resource',
+    // documentTitle: '{ contentTitle } - { channelTitle }',
+    // shareFile: 'Share',
+    // },
   };
 
 </script>
