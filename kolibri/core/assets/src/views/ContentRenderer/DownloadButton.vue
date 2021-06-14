@@ -28,7 +28,7 @@
     },
     computed: {
       fileOptions() {
-        return this.files.map(file => {
+        let options = this.files.map(file => {
           const label = getFilePresetString(file);
           return {
             label,
@@ -40,6 +40,8 @@
             }),
           };
         });
+        console.log(options);
+        return options;
       },
     },
     methods: {
