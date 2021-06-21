@@ -133,6 +133,17 @@
       </template>
     </slot>
 
+    <KModal
+      v-if="markCompleteModalIsOpen"
+      :title="$tr('markAsCompleteModalTitle')"
+      :submitText="$tr('confirmText')"
+      :cancelText="$tr('cancelText')"
+      @submit="markResourceComplete"
+      @cancel="cancel"
+    >
+      <p>{{ $tr('confirmMarkCompleteText') }}</p>
+    </KModal>
+
     <MasteredSnackbars
       v-if="progress >= 1 && wasIncomplete"
       :nextContent="content.next_content"
@@ -198,6 +209,7 @@
         wasIncomplete: false,
         licenceDescriptionIsVisible: false,
         sessionReady: false,
+        markCompleteModalIsOpen: true,
       };
     },
     computed: {
@@ -350,6 +362,15 @@
       markAsComplete() {
         this.wasIncomplete = false;
       },
+      markResourceComplete() {
+        this.addProgress(100);
+        this.$emit('updateProgress', 100);
+        this.markCompleteModalIsOpen = false;
+      },
+      cancel() {
+        this.markCompleteModalIsOpen = false;
+        this.$emit('cancel');
+      },
       genContentLink(id, isLeaf) {
         return {
           name: isLeaf ? PageNames.TOPICS_CONTENT : PageNames.TOPICS_TOPIC,
@@ -376,6 +397,10 @@
       nextResource: 'Next resource',
       documentTitle: '{ contentTitle } - { channelTitle }',
       shareFile: 'Share',
+      markAsCompleteModalTitle: 'Mark resource as finished',
+      confirmMarkCompleteText: 'Are you sure you want to mark this resource as finished?',
+      cancelText: 'Cancel',
+      confirmText: 'Confirm',
     },
   };
 
