@@ -5,6 +5,7 @@
     ref="sidePanel"
     class="side-panel-wrapper"
     tabindex="0"
+    :style="alignmentStyle"
     @keyup.esc="togglePanel"
   >
     <transition name="side-panel">
@@ -15,27 +16,6 @@
           backgroundColor: $themeTokens.surface,
         }"
       >
-        <h2 class="title">
-          {{ title }}
-          <span>
-            <KIconButton
-              icon="close"
-              class="close-button"
-              @click="togglePanel"
-            />
-          </span>
-        </h2>
-        <SidePanelResourceMetadata
-          v-if="panelType === 'resourceMetadata'"
-          :togglePanel="togglePanel"
-        />
-        <SidePanelResourcesList
-          v-if="panelType === 'resourcesList'"
-          :contents="siblingNodes"
-          :currentContent="content"
-          :togglePanel="togglePanel"
-          :nextTopic="nextTopic"
-        />
       </div>
     </transition>
     <Backdrop
@@ -51,65 +31,44 @@
 <script>
 
   import Backdrop from 'kolibri.coreVue.components.Backdrop';
-  import { mapState } from 'vuex';
-  import SidePanelResourceMetadata from './SidePanelResourceMetadata';
-  import SidePanelResourcesList from './SidePanelResourcesList';
+  // import { mapState } from 'vuex';
 
   export default {
     name: 'FullScreenSidePanel',
     components: {
       Backdrop,
-      SidePanelResourceMetadata,
-      SidePanelResourcesList,
+    },
+    props: {
+      alignment: {
+        type: String,
+        default: 'right',
+        validator(val) {
+          return Object.values(['left', 'right']).includes(val);
+        },
+      },
     },
     data: function() {
       return {
         panelOpen: true,
       };
     },
-    computed: {
-      ...mapState('topicsTree', ['content', 'contents']),
-      panelType() {
-        return 'resourceMetadata';
-      },
-      siblingNodes() {
-        let siblings = this.contents.filter(
-          currentContent => currentContent.parent === this.content.parent
-        );
-        return siblings;
-      },
-      nextTopic() {
-        let currentContentGrandparent = this.content.ancestors[0].id;
-        let topicsWithSameAncestor = this.contents.filter(
-          item =>
-            !item.is_leaf && item.ancestors[0] && item.ancestors[0].id === currentContentGrandparent
-        );
-        let currentIndex = topicsWithSameAncestor
-          .map(topic => topic.id)
-          .indexOf(this.content.parent);
-        let nextTopic = topicsWithSameAncestor[currentIndex + 1] || null;
-        return nextTopic;
-      },
-      title() {
-        if (this.panelType === 'resourceMetadata') {
-          return this.content.title;
-        } else {
-          return this.$tr('topicHeader');
-        }
-      },
-    },
+    // computed: {
+    //   ...mapState('topicsTree', ['content', 'contents']),
+    // },
     methods: {
       togglePanel() {
         this.$emit('togglePanel');
-        this.panelOpen = !this.panelOpen;
+      },
+      alignmentStyle() {
+        this.alignment == 'right' ? { right: 0 } : { left: 0 };
       },
     },
-    $trs: {
-      topicHeader: {
-        message: 'Also in this folder',
-        context: 'Title of the panel with all topic contents. ',
-      },
-    },
+    // $trs: {
+    //   topicHeader: {
+    //     message: 'Also in this folder',
+    //     context: 'Title of the panel with all topic contents. ',
+    //   },
+    // },
   };
 
 </script>
@@ -126,7 +85,6 @@
   .side-panel {
     position: fixed;
     top: 0;
-    right: 0;
     z-index: 16;
     width: 100vw;
     height: 100vh;
