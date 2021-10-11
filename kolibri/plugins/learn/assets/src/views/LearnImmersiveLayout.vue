@@ -175,7 +175,7 @@
         return learningActivities;
       },
     },
-    created() {
+    beforeUpdate() {
       client({
         method: 'get',
         url: urls['kolibri:core:bookmarks-list'](),
