@@ -56,7 +56,11 @@
           :disabled="moreLoading"
           @click="searchMore"
         />
-        <p>{{ $tr('clearAll') }}</p>
+        <KButton
+          :text="$tr('clearAll')"
+          :primary="false"
+          @click="clearSearch"
+        />
         <HybridLearningCardGrid
           v-if="results.length"
           :numCols="numCols"
@@ -112,96 +116,6 @@
       @cancel="currentCategory = null"
       @input="handleCategory"
     />
-    <!-- <KGrid
-      class="main-content-grid"
-    >
-      <EmbeddedSidePanel
-        :channels="channels"
-        width="3"
-      />
-      <div>
-        <KIconButton
-          icon="channel"
-          :ariaLabel="coreString('search')"
-          :color="$themeTokens.text"
-          :tooltip="coreString('search')"
-          @click="toggleSidePanelVisibility"
-        />
-      </div>
-      <KGridItem
-        :layout="{ span: 3 }"
-        class="side-panel"
-      />
-      <KGridItem
-        class="card-grid"
-        :style="{ padding: windowIsSmall ? '24px' : 0 }"
-        :layout="{ span: 8 }"
-        :layout4="{ span: 4 }"
-      >
-        <div v-if="!displayingSearchResults">
-          <h2>{{ coreString('channelsLabel') }}</h2>
-          <ChannelCardGroupGrid
-            v-if="channels.length"
-            class="grid"
-            :contents="channels"
-            :genContentLink="genChannelLink"
-          />
-          <div class="toggle-view-buttons">
-            <KIconButton
-              icon="menu"
-              :ariaLabel="$tr('viewAsList')"
-              :color="$themeTokens.text"
-              :tooltip="$tr('viewAsList')"
-              @click="toggleCardView('list')"
-            />
-            <KIconButton
-              icon="channel"
-              :ariaLabel="$tr('viewAsGrid')"
-              :color="$themeTokens.text"
-              :tooltip="$tr('viewAsGrid')"
-              @click="toggleCardView('card')"
-            />
-          </div>
-          <h2>{{ $tr('recent') }}</h2>
-          <HybridLearningCardGrid
-            v-if="popular.length"
-            :cardViewStyle="currentViewStyle"
-            :numCols="numCols"
-            :genContentLink="genContentLink"
-            :contents="trimmedPopular"
-          />
-        </div>
-        <div v-else>
-          <KCircularLoader
-            v-if="searchLoading"
-            class="loader"
-            type="indeterminate"
-            :delay="false"
-          />
-          <div v-else>
-            <h2>{{ $tr('results', { results: results.length }) }}</h2>
-
-            <p>{{ $tr('clearAll') }}</p>
-            <ContentCardGroupGrid
-              v-if="results.length"
-              :cardViewStyle="currentViewStyle"
-              :genContentLink="genContentLink"
-              :contents="results"
-            />
-          </div>
-        </div>
-      </KGridItem>
-    </KGrid>
-    <CategorySearchModal
-      v-if="currentCategory"
-      :selectedCategory="currentCategory"
-      @cancel="currentCategory = null"
-      @input="handleCategory"
-    />
-      :numCols="numCols"
-      @cancel="hideSearchModal"/>
-    </main>
-  </div> -->
   </div>
 
 </template>
@@ -397,9 +311,9 @@
         this.currentCategory = null;
       },
       search() {
+        const getParams = { max_results: 25 };
         if (this.displayingSearchResults) {
           this.searchLoading = true;
-          const getParams = { max_results: 25 };
           for (let key of searchKeys) {
             if (key === 'categories') {
               if (this.searchTerms[key][AllCategories]) {
@@ -425,6 +339,11 @@
             this.labels = data.labels;
             this.searchLoading = false;
           });
+        } else {
+          ContentNodeResource.fetchCollection({ getParams }).then(data => {
+            console.log(data.labels);
+            this.labels = data.labels;
+          });
         }
       },
       searchMore() {
@@ -437,6 +356,9 @@
             this.moreLoading = false;
           });
         }
+      },
+      clearSearch() {
+        this.$router.push(this.$router.getRoute(PageNames.LIBRARY));
       },
     },
     $trs: {
