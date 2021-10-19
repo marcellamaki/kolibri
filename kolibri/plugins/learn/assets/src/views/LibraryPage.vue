@@ -2,7 +2,6 @@
 
   <div>
     <main
-      v-if="!queryingData"
       class="main-grid"
       :style="{ marginLeft: `${(sidePanelWidth + 24)}px` }"
     >
@@ -15,62 +14,103 @@
           @click="toggleSidePanelVisibility"
         />
       </div>
-      <h2>{{ coreString('channelsLabel') }}</h2>
-      <ChannelCardGroupGrid
-        v-if="channels.length"
-        class="grid"
-        :contents="channels"
-        :genContentLink="genChannelLink"
-      />
-      <div class="toggle-view-buttons">
-        <KIconButton
-          icon="menu"
-          :ariaLabel="$tr('viewAsList')"
-          :color="$themeTokens.text"
-          :tooltip="$tr('viewAsList')"
-          @click="toggleCardView('list')"
+      <div v-if="!displayingSearchResults">
+        <h2>{{ coreString('channelsLabel') }}</h2>
+        <ChannelCardGroupGrid
+          v-if="channels.length"
+          class="grid"
+          :contents="channels"
+          :genContentLink="genChannelLink"
         />
-        <KIconButton
-          icon="channel"
-          :ariaLabel="$tr('viewAsGrid')"
-          :color="$themeTokens.text"
-          :tooltip="$tr('viewAsGrid')"
-          @click="toggleCardView('card')"
+        <div class="toggle-view-buttons">
+          <KIconButton
+            icon="menu"
+            :ariaLabel="$tr('viewAsList')"
+            :color="$themeTokens.text"
+            :tooltip="$tr('viewAsList')"
+            @click="toggleCardView('list')"
+          />
+          <KIconButton
+            icon="channel"
+            :ariaLabel="$tr('viewAsGrid')"
+            :color="$themeTokens.text"
+            :tooltip="$tr('viewAsGrid')"
+            @click="toggleCardView('card')"
+          />
+        </div>
+        <h2>{{ $tr('recent') }}</h2>
+        <HybridLearningCardGrid
+          v-if="popular.length"
+          :cardViewStyle="currentViewStyle"
+          :numCols="numCols"
+          :genContentLink="genContentLink"
+          :contents="trimmedPopular"
         />
       </div>
-      <h2>{{ $tr('recent') }}</h2>
-      <HybridLearningCardGrid
-        v-if="popular.length"
-        :cardViewStyle="currentViewStyle"
-        :numCols="numCols"
-        :genContentLink="genContentLink"
-        :contents="trimmedPopular"
-      />
-      <div v-else>
-        <h2>{{ $tr('moreThanXResults') }}</h2>
+      <div v-else-if="!searchLoading">
+        <h2>{{ $tr('results', { results: results.length }) }}</h2>
+        <KButton
+          v-if="more"
+          :text="coreString('viewMoreAction')"
+          :primary="false"
+          :disabled="moreLoading"
+          @click="searchMore"
+        />
         <p>{{ $tr('clearAll') }}</p>
+        <HybridLearningCardGrid
+          v-if="results.length"
+          :numCols="numCols"
+          :cardViewStyle="currentViewStyle"
+          :genContentLink="genContentLink"
+          :contents="results"
+        />
+        <KButton
+          v-if="more"
+          :text="coreString('viewMoreAction')"
+          :primary="false"
+          :disabled="moreLoading"
+          @click="searchMore"
+        />
+      </div>
+      <div v-else>
         <KCircularLoader
-          v-if="loading"
+          v-if="searchLoading"
           class="loader"
           type="indeterminate"
           :delay="false"
         />
+        <div v-else>
+          <h2>{{ $tr('results', { results: results.length }) }}</h2>
+
+          <p>{{ $tr('clearAll') }}</p>
+          <HybridLearningCardGrid
+            v-if="results.length"
+            :numCols="numCols"
+            :cardViewStyle="currentViewStyle"
+            :genContentLink="genContentLink"
+            :contents="results"
+          />
+        </div>
       </div>
     </main>
     <EmbeddedSidePanel
-      v-if="windowIsLarge"
-      :channels="channels"
+      v-if="!!windowIsLarge"
+      v-model="searchTerms"
       :width="`${sidePanelWidth}px`"
-      alignment="left"
+      :availableLabels="labels"
+      @currentCategory="handleShowSearchModal"
     />
-    <FullScreenSidePanel
+    <!-- <FullScreenSidePanel
       v-if="!windowIsLarge && sidePanelIsOpen"
       @togglePanel="toggleSidePanelVisibility"
-    />
+    /> -->
     <CategorySearchModal
-      v-if="showSearchModal"
+      v-if="currentCategory"
       :selectedCategory="currentCategory"
       :numCols="numCols"
+      :availableLabels="labels"
+      @cancel="currentCategory = null"
+      @input="handleCategory"
     />
     <!-- <KGrid
       class="main-content-grid"
@@ -78,7 +118,6 @@
       <EmbeddedSidePanel
         :channels="channels"
         width="3"
-        @currentCategory="handleShowSearchModal"
       />
       <div>
         <KIconButton
@@ -141,26 +180,13 @@
           />
           <div v-else>
             <h2>{{ $tr('results', { results: results.length }) }}</h2>
-            <KButton
-              v-if="more"
-              :text="coreString('viewMoreAction')"
-              :primary="false"
-              :disabled="moreLoading"
-              @click="searchMore"
-            />
+
             <p>{{ $tr('clearAll') }}</p>
             <ContentCardGroupGrid
               v-if="results.length"
               :cardViewStyle="currentViewStyle"
               :genContentLink="genContentLink"
               :contents="results"
-            />
-            <KButton
-              v-if="more"
-              :text="coreString('viewMoreAction')"
-              :primary="false"
-              :disabled="moreLoading"
-              @click="searchMore"
             />
           </div>
         </div>
@@ -190,13 +216,13 @@
   import { ContentNodeProgressResource, ContentNodeResource } from 'kolibri.resources';
   import commonCoreStrings from 'kolibri.coreVue.mixins.commonCoreStrings';
   import { AllCategories, NoCategories } from 'kolibri.coreVue.vuex.constants';
-  import FullScreenSidePanel from '../../../../../core/assets/src/views/FullScreenSidePanel';
+  // import FullScreenSidePanel from '../../../../../core/assets/src/views/FullScreenSidePanel';
   import { PageNames } from '../constants';
   import commonLearnStrings from './commonLearnStrings';
   import ChannelCardGroupGrid from './ChannelCardGroupGrid';
   import HybridLearningCardGrid from './HybridLearningCardGrid';
   import EmbeddedSidePanel from './EmbeddedSidePanel';
-  import CategorySearchModal from './CategorySearchModal/CategorySearchModal';
+  import CategorySearchModal from './CategorySearchModal';
 
   const mobileCarouselLimit = 3;
   const desktopCarouselLimit = 15;
@@ -222,7 +248,7 @@
       HybridLearningCardGrid,
       ChannelCardGroupGrid,
       EmbeddedSidePanel,
-      FullScreenSidePanel,
+      // FullScreenSidePanel,
       CategorySearchModal,
     },
     mixins: [commonLearnStrings, commonCoreStrings, responsiveWindowMixin],
@@ -235,6 +261,7 @@
         results: [],
         more: null,
         labels: null,
+        showSearchModal: false,
       };
     },
     computed: {
@@ -267,6 +294,7 @@
           if (this.$route.query.keywords) {
             searchTerms.keywords = this.$route.query.keywords;
           }
+          console.log(searchTerms);
           return searchTerms;
         },
         set(value) {
@@ -292,10 +320,14 @@
       displayingSearchResults() {
         return Object.values(this.searchTerms).some(v => Object.keys(v).length);
       },
-    },
-    watch: {
-      searchTerms() {
-        this.search();
+      sidePanelWidth() {
+        if (this.windowIsSmall || this.windowIsMedium) {
+          return 0;
+        } else if (this.windowBreakpoint < 4) {
+          return 234;
+        } else {
+          return 346;
+        }
       },
       numCols() {
         if (this.currentViewStyle === 'list' || this.windowBreakpoint < 1) {
@@ -306,14 +338,10 @@
           return 3;
         }
       },
-      sidePanelWidth() {
-        if (this.windowIsSmall || this.windowIsMedium) {
-          return 0;
-        } else if (this.windowBreakpoint < 4) {
-          return 234;
-        } else {
-          return 346;
-        }
+    },
+    watch: {
+      searchTerms() {
+        this.search();
       },
     },
     created() {
@@ -350,16 +378,13 @@
           params: { channel_id },
         };
       },
-      toggleCardView(value) {
-        this.currentViewStyle = value;
-      },
       handleShowSearchModal(value) {
         this.currentCategory = value;
         this.showSearchModal = true;
       },
-      hideSearchModal() {
-        this.showSearchModal = false;
-      },
+      // hideSearchModal() {
+      //   this.showSearchModal = false;
+      // },
 
       toggleCardView(value) {
         this.currentViewStyle = value;
@@ -394,6 +419,7 @@
             getParams.keywords = this.searchTerms.keywords;
           }
           ContentNodeResource.fetchCollection({ getParams }).then(data => {
+            console.log(data);
             this.results = data.results;
             this.more = data.more;
             this.labels = data.labels;
