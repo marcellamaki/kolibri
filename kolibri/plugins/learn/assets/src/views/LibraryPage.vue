@@ -48,19 +48,23 @@
         />
       </div>
       <div v-else-if="!searchLoading">
-        <h2>{{ $tr('results', { results: results.length }) }}</h2>
-        <KButton
-          v-if="more"
-          :text="coreString('viewMoreAction')"
-          :primary="false"
-          :disabled="moreLoading"
-          @click="searchMore"
-        />
-        <KButton
-          :text="$tr('clearAll')"
-          :primary="false"
-          @click="clearSearch"
-        />
+        <h2>
+          {{ $tr('results', { results: results.length }) }}
+        </h2>
+        <div>
+          <KButton
+            v-if="more"
+            :text="coreString('viewMoreAction')"
+            :primary="false"
+            :disabled="moreLoading"
+            @click="searchMore"
+          />
+          <KButton
+            :text="$tr('clearAll')"
+            appearance="basic-link"
+            @click="clearSearch"
+          />
+        </div>
         <HybridLearningCardGrid
           v-if="results.length"
           :numCols="numCols"
@@ -176,6 +180,7 @@
         more: null,
         labels: null,
         showSearchModal: false,
+        // sidePanelIsOpen: false,
       };
     },
     computed: {

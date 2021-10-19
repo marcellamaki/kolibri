@@ -10,6 +10,7 @@
   >
     <router-link
       :to="link"
+      class="card-link"
     >
       <div class="header-bar">
         <KLabeledIcon
@@ -38,10 +39,10 @@
     </router-link>
     <div class="footer">
       <KLinearLoader
-        v-if="progress"
+        v-if="!completed && progress"
         class="k-linear-loader"
         :delay="false"
-        :progress="progress"
+        :progress="progress * 100"
         type="determinate"
         :style="{ backgroundColor: $themeTokens.fineLine }"
       />
@@ -53,6 +54,14 @@
           :isTopic="isTopic"
         />
         <KIconButton
+          icon="infoPrimary"
+          size="mini"
+          :color="$themePalette.grey.v_400"
+          :ariaLabel="coreString('viewInformation')"
+          :tooltip="coreString('viewInformation')"
+          @click="$emit('toggleInfoPanel')"
+        />
+        <KIconButton
           icon="optionsVertical"
           class="info-icon"
           size="mini"
@@ -61,13 +70,12 @@
           :tooltip="coreString('moreOptions')"
           @click="$emit('toggleOptions')"
         />
-        <KIconButton
-          icon="infoPrimary"
-          size="mini"
-          :color="$themePalette.grey.v_400"
-          :ariaLabel="coreString('viewInformation')"
-          :tooltip="coreString('viewInformation')"
-          @click="$emit('toggleInfoPanel')"
+        <UiSelect
+          :value="selection"
+          :options="options"
+          :label="label"
+          :floatingLabel="floatingLabel"
+          @blur="$emit('blur')"
         />
         <KButton
           v-if="copiesCount > 1"
@@ -198,6 +206,9 @@
           return `${activity}`;
         }
       },
+      completed() {
+        return this.progress >= 1;
+      },
     },
   };
 
@@ -210,11 +221,7 @@
   @import './card';
 
   $margin: 24px;
-
-  .coach-content-label {
-    display: inline-block;
-    padding-top: $margin;
-  }
+  $margin-thin: 8px;
 
   .card {
     @extend %dropshadow-1dp;
@@ -222,7 +229,6 @@
     position: relative;
     display: inline-block;
     width: 100%;
-    text-decoration: none;
     vertical-align: top;
     border-radius: 8px;
     transition: box-shadow $core-time ease;
@@ -233,6 +239,10 @@
       outline-width: 4px;
       outline-offset: 6px;
     }
+  }
+
+  .card-link {
+    text-decoration: none;
   }
 
   .header-bar {
@@ -251,7 +261,6 @@
 
   .channel-logo {
     display: inline-block;
-    float: right;
     height: 24px;
     margin-bottom: 0;
   }
@@ -272,16 +281,20 @@
 
   .footer-icons {
     position: absolute;
-    right: $margin;
-    bottom: $margin;
+    right: $margin-thin;
+    bottom: $margin-thin;
     display: inline;
+  }
+
+  .coach-content-label {
+    max-width: 30px;
+    vertical-align: top;
   }
 
   .k-linear-loader {
     left: 0;
     display: inline-block;
-    max-width: 70%;
-    margin-top: 8px;
+    max-width: calc(100% - 90px);
   }
 
   .mobile-card.card {
