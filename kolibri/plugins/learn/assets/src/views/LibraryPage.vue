@@ -22,7 +22,7 @@
           :contents="channels"
           :genContentLink="genChannelLink"
         />
-        <div class="toggle-view-buttons">
+        <div v-if="!(windowBreakpoint < 1)" class="toggle-view-buttons">
           <KIconButton
             icon="menu"
             :ariaLabel="$tr('viewAsList')"
@@ -106,12 +106,30 @@
       v-model="searchTerms"
       :width="`${sidePanelWidth}px`"
       :availableLabels="labels"
+      position="embedded"
       @currentCategory="handleShowSearchModal"
     />
-    <!-- <FullScreenSidePanel
+    <FullScreenSidePanel
       v-if="!windowIsLarge && sidePanelIsOpen"
       @togglePanel="toggleSidePanelVisibility"
-    /> -->
+    >
+      <KIconButton
+        v-if="windowIsSmall"
+        class="overlay-close-button"
+        icon="close"
+        :ariaLabel="coreString('close')"
+        :color="$themeTokens.text"
+        :tooltip="coreString('close')"
+        @click="toggleSidePanelVisibility"
+      />
+      <EmbeddedSidePanel
+        v-model="searchTerms"
+        :width="`${sidePanelOverlayWidth}px`"
+        :availableLabels="labels"
+        position="overlay"
+        @currentCategory="handleShowSearchModal"
+      />
+    </FullScreenSidePanel>
     <CategorySearchModal
       v-if="currentCategory"
       :selectedCategory="currentCategory"
@@ -134,7 +152,7 @@
   import { ContentNodeProgressResource, ContentNodeResource } from 'kolibri.resources';
   import commonCoreStrings from 'kolibri.coreVue.mixins.commonCoreStrings';
   import { AllCategories, NoCategories } from 'kolibri.coreVue.vuex.constants';
-  // import FullScreenSidePanel from '../../../../../core/assets/src/views/FullScreenSidePanel';
+  import FullScreenSidePanel from '../../../../../core/assets/src/views/FullScreenSidePanel';
   import { PageNames } from '../constants';
   import commonLearnStrings from './commonLearnStrings';
   import ChannelCardGroupGrid from './ChannelCardGroupGrid';
@@ -166,7 +184,7 @@
       HybridLearningCardGrid,
       ChannelCardGroupGrid,
       EmbeddedSidePanel,
-      // FullScreenSidePanel,
+      FullScreenSidePanel,
       CategorySearchModal,
     },
     mixins: [commonLearnStrings, commonCoreStrings, responsiveWindowMixin],
@@ -180,7 +198,7 @@
         more: null,
         labels: null,
         showSearchModal: false,
-        // sidePanelIsOpen: false,
+        sidePanelIsOpen: false,
       };
     },
     computed: {
@@ -248,6 +266,9 @@
           return 346;
         }
       },
+      sidePanelOverlayWidth() {
+        return 300;
+      },
       numCols() {
         if (this.currentViewStyle === 'list' || this.windowBreakpoint < 1) {
           return 1;
@@ -300,6 +321,7 @@
       handleShowSearchModal(value) {
         this.currentCategory = value;
         this.showSearchModal = true;
+        this.sidePanelIsOpen = false;
       },
       // hideSearchModal() {
       //   this.showSearchModal = false;
@@ -413,6 +435,12 @@
 
   .toggle-view-buttons {
     float: right;
+  }
+
+  .overlay-close-button {
+    position: fixed;
+    top: 8px;
+    right: 8px;
   }
 
 </style>

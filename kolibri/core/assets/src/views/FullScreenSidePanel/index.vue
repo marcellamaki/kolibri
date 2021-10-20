@@ -16,6 +16,7 @@
           backgroundColor: $themeTokens.surface,
         }"
       >
+        <slot></slot>
       </div>
     </transition>
     <Backdrop
@@ -88,12 +89,12 @@
     z-index: 16;
     width: 100vw;
     height: 100vh;
-    padding-top: 18px;
+    padding: 24px;
     overflow: scroll;
     font-size: 14px;
 
     @media (min-width: 436px) {
-      width: 436px;
+      width: 346px;
     }
   }
 
