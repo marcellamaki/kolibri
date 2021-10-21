@@ -13,10 +13,10 @@
       class="card-link"
     >
       <div class="header-bar">
-        <KLabeledIcon
-          :icon="kind === 'topic' ? 'topic' : `${kindToLearningActivity}Solid`"
-          :label="coreString(kindToLearningActivity)"
-          class="k-labeled-icon"
+        <LearningActivityLabel
+          :contentNode="contentNode"
+          class="learning-activity-label"
+          :style="{ color: $themeTokens.text }"
         />
         <img
           :src="channelThumbnail"
@@ -89,13 +89,10 @@
 
   import { mapGetters } from 'vuex';
   import { validateLinkObject, validateContentNodeKind } from 'kolibri.utils.validators';
-  import {
-    LearningActivities,
-    ContentKindsToLearningActivitiesMap,
-  } from 'kolibri.coreVue.vuex.constants';
   import CoachContentLabel from 'kolibri.coreVue.components.CoachContentLabel';
   import TextTruncator from 'kolibri.coreVue.components.TextTruncator';
   import commonCoreStrings from 'kolibri.coreVue.mixins.commonCoreStrings';
+  import LearningActivityLabel from '../cards/ResourceCard/LearningActivityLabel';
   import commonLearnStrings from '../commonLearnStrings';
   import CardThumbnail from './CardThumbnail.vue';
 
@@ -105,6 +102,7 @@
       CardThumbnail,
       CoachContentLabel,
       TextTruncator,
+      LearningActivityLabel,
     },
     mixins: [commonLearnStrings, commonCoreStrings],
     props: {
@@ -165,6 +163,10 @@
         type: String,
         default: null,
       },
+      contentNode: {
+        type: Object,
+        required: true,
+      },
       copiesCount: {
         type: Number,
         default: null,
@@ -185,19 +187,6 @@
       },
       hasFooter() {
         return this.numCoachContents > 0 || this.copiesCount > 1 || this.$slots.actions;
-      },
-      kindToLearningActivity() {
-        let activity = '';
-        if (this.kind === 'topic') {
-          return 'folder';
-        } else if (Object.values(LearningActivities).includes(this.kind)) {
-          activity = this.kind;
-          return `${activity}`;
-        } else {
-          // otherwise reassign the old content types to the new metadata
-          activity = ContentKindsToLearningActivitiesMap[this.kind];
-          return `${activity}`;
-        }
       },
       completed() {
         return this.progress >= 1;
@@ -254,8 +243,6 @@
 
   .channel-logo {
     display: inline-block;
-    height: 24px;
-    margin-bottom: 0;
   }
 
   .text {
@@ -282,6 +269,13 @@
   .coach-content-label {
     max-width: 30px;
     vertical-align: top;
+  }
+
+  .learning-activity-label {
+    width: 100px;
+    /deep/ .learning-activity {
+      justify-content: flex-start;
+    }
   }
 
   .k-linear-loader {
