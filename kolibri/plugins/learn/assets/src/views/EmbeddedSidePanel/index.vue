@@ -10,9 +10,12 @@
   >
     <div v-if="topics && topicsListDisplayed">
       <div v-for="t in topics" :key="t.id">
-        <h3>
-          {{ t.title }}
-        </h3>
+        <KRouterLink
+          :text="t.title"
+          class="side-panel-folder-link"
+          :appearanceOverrides="{ color: $themeTokens.text }"
+          :to="genContentLink(t.id)"
+        />
       </div>
     </div>
     <div v-else>
@@ -211,6 +214,10 @@
           return ['embedded', 'overlay'].includes(val);
         },
       },
+      genContentLink: {
+        type: Function,
+        default: () => ({}),
+      },
     },
     computed: {
       inputValue: {
@@ -340,6 +347,14 @@
     overflow-y: scroll;
     font-size: 14px;
     box-shadow: 0 3px 3px 0 #00000040;
+  }
+
+  .side-panel-folder-link {
+    margin-top: 12px;
+    margin-bottom: 12px;
+    /deep/ .link-text {
+      text-decoration: none !important;
+    }
   }
 
   .section {
