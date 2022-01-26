@@ -23,8 +23,9 @@
           :contents="rootNodes"
         />
         <div
-          v-if="!(windowBreakpoint < 1 ) && resumableContentNodes.length "
+          v-if="!(windowIsSmall) && resumableContentNodes.length"
           class="toggle-view-buttons"
+          data-test="toggle-view-buttons"
         >
           <KIconButton
             icon="menu"
@@ -43,11 +44,12 @@
             @click="toggleCardView('card')"
           />
         </div>
-        <h2 v-if="resumableContentNodes.length">
+        <h2 v-if="resumableContentNodes.length" data-test="recent-content-nodes-title">
           {{ $tr('recent') }}
         </h2>
         <HybridLearningCardGrid
           v-if="resumableContentNodes.length"
+          data-test="resumable-content-card-grid"
           :cardViewStyle="currentViewStyle"
           :numCols="numCols"
           :genContentLink="genContentLink"
@@ -57,7 +59,8 @@
           @toggleInfoPanel="toggleInfoPanel"
         />
         <KButton
-          v-if="moreResumableContentNodes"
+          v-if="moreResumableContentNodes && moreResumableContentNodes.length"
+          data-test="more-resumable-nodes-button"
           appearance="basic-link"
           @click="fetchMoreResumableContentNodes"
         >
@@ -81,7 +84,7 @@
           @removeItem="removeFilterTag"
           @clearSearch="clearSearch"
         />
-        <div v-if="!(windowBreakpoint < 1) && results.length" class="toggle-view-buttons">
+        <div v-if="!(windowIsSmall) && results.length" class="toggle-view-buttons">
           <KIconButton
             icon="menu"
             :ariaLabel="$tr('viewAsList')"
