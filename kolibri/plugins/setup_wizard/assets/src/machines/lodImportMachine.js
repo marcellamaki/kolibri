@@ -1,6 +1,6 @@
 import { createMachine, assign } from 'xstate';
 import { TaskResource } from 'kolibri.resources';
-import SelectFacilityForm from '../views/importLODUsers/SelectFacilityForm';
+import SelectLODFacilityForm from '../views/importLODUsers/SelectLODFacilityForm';
 import SelectLODSetupType from '../views/importLODUsers/SelectLODSetupType';
 import ImportIndividualUserForm from '../views/importLODUsers/ImportIndividualUserForm.vue';
 import LoadingTaskPage from '../views/importLODUsers/LoadingTaskPage';
@@ -14,7 +14,6 @@ const getDevice = data => ({
 });
 
 const assignDevice = assign((_, event) => {
-  console.log(event);
   const _device = getDevice(event.value);
   const _facility = { name: null, id: null, adminuser: null, adminpassword: null };
   if (_device.facilities.length === 1) {
@@ -29,6 +28,16 @@ const assignDevice = assign((_, event) => {
     steps: total_steps,
   };
 });
+
+const setSetupType = assign((_, event) => {
+  return {
+    selectedSetupType: event.value,
+  };
+});
+
+const deviceHasMultipleFacilities = ctx => ctx.facilities.length > 1;
+const isImportingUser = ctx => ctx.selectedSetupType === 'import';
+// const isCreatingUser = ctx => ctx.selectSetupType === 'new';
 
 const assignFacility = assign((_, event) => {
   const ctx = { facility: event.value.facility };
@@ -77,6 +86,7 @@ export const lodImportMachine = createMachine({
   context: {
     step: 0,
     steps: 5,
+    selectedSetupType: null,
     device: { name: null, id: null, baseurl: null },
     facilities: [],
     facility: { name: null, id: null, adminUser: null, adminPassword: null, adminTask: null },
@@ -89,15 +99,48 @@ export const lodImportMachine = createMachine({
       meta: { step: '0', component: SelectLODSetupType },
       // TODO: Make setupType method, figure out events to set data
       on: {
+        SETSETUPTYPE: { actions: setSetupType },
         CONTINUE: { target: 'selectFacility', actions: assignDevice },
       },
     },
+    needsToSelectFacility: {
+      always: [
+        {
+          cond: deviceHasMultipleFacilities,
+          target: 'selectFacility',
+        },
+        {
+          target: 'userSetupType',
+        },
+      ],
+    },
+    // A passthrough step depending on whether the user is creating a new user account
+    // or importing one or more user accounts
+    userSetupType: {
+      always: [
+        // {
+        //   cond: isCreatingUser,
+        //   target: 'createNewUser',
+        // },
+        {
+          cond: isImportingUser,
+          target: 'userCredentials',
+        },
+      ],
+    },
     selectFacility: {
-      meta: { step: '1', component: SelectFacilityForm },
+      meta: { step: '1', component: SelectLODFacilityForm },
       on: {
-        CONTINUE: { target: 'userCredentials', actions: assignFacility },
+        CONTINUE: { target: 'userSetupType', actions: assignFacility },
       },
     },
+    // creatingUser: {
+    //   meta: { step: '2', component: CreateUserAccountForm },
+    //   on: {
+    //     CONTINUE: { target: 'creatingUserAccount', actions: createUser },
+    //     BACK: {},
+    //   },
+    // },
     userCredentials: {
       meta: { step: '2', component: ImportIndividualUserForm },
       on: {

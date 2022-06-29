@@ -29,6 +29,7 @@
 <script>
 
   import { SelectAddressModalGroup } from 'kolibri.coreVue.componentSets.sync';
+  import commonSyncElements from 'kolibri.coreVue.mixins.commonSyncElements';
   import OnboardingStepBase from '../OnboardingStepBase';
 
   const Options = Object.freeze({
@@ -42,6 +43,7 @@
       OnboardingStepBase,
       SelectAddressModalGroup,
     },
+    mixins: [commonSyncElements],
     inject: ['lodService'],
     data() {
       return {
@@ -55,7 +57,16 @@
         this.showSelectAddressModal = true;
       },
       handleAddressSubmit(address) {
-        this.lodService.send({ type: 'CONTINUE', value: address });
+        this.loadingNewAddress = true;
+        return this.fetchNetworkLocationFacilities(address.id)
+          .then(data => {
+            this.lodService.send({ type: 'SETSETUPTYPE', value: this.selected });
+            this.lodService.send({ type: 'CONTINUE', value: data });
+          })
+          .catch(error => {
+            // TODO handle disconnected peers error more gracefully
+            this.$store.dispatch('showError', error);
+          });
       },
     },
 

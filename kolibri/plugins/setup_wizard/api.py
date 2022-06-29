@@ -140,7 +140,12 @@ class FacilityImportViewSet(ViewSet):
         :param password: Password of the user that's going to authenticate
         :return: List of the learners of the facility.
         """
-        facility_info = get_remote_users_info(request)
+        facility_info = get_remote_users_info(
+            baseurl=request.data["baseurl"],
+            facility_id=request.data["facility_id"],
+            username=request.data["username"],
+            password=request.data["password"],
+        )
         user_info = facility_info["user"]
         roles = user_info["roles"]
         admin_roles = (user_kinds.ADMIN, user_kinds.SUPERUSER)

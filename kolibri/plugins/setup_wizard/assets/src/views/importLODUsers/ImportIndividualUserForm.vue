@@ -1,13 +1,10 @@
 <template>
 
-  <OnboardingForm
-    :header="$tr('importIndividualUsersHeader')"
+  <OnboardingStepBase
+    :title="$tr('importIndividualUsersHeader')"
     :description="formDescription"
-    :submitText="coreString('importAction')"
-    :disabled="checkFormDisabled"
-    :finishButton="users.length !== 0"
-    @submit="handleSubmit"
-    @click_finish="redirectToChannels"
+    :navDisabled="checkFormDisabled"
+    @continue="handleSubmit"
   >
     <p class="facility-name">
       {{ formatNameAndId(facility.name, facility.id) }}
@@ -77,7 +74,7 @@
       />
     </KModal>
 
-  </OnboardingForm>
+  </OnboardingStepBase>
 
 </template>
 
@@ -90,13 +87,13 @@
   import { DemographicConstants, ERROR_CONSTANTS } from 'kolibri.coreVue.vuex.constants';
   import { TaskResource } from 'kolibri.resources';
   import CatchErrors from 'kolibri.utils.CatchErrors';
-  import OnboardingForm from '../onboarding-forms/OnboardingForm';
-  import { FacilityImportResource, FinishSoUDSyncingResource } from '../../api';
+  import { FacilityImportResource } from '../../api';
+  import OnboardingStepBase from '../OnboardingStepBase';
 
   export default {
     name: 'ImportIndividualUserForm',
     components: {
-      OnboardingForm,
+      OnboardingStepBase,
       PasswordTextbox,
     },
     mixins: [commonSyncElements, commonCoreStrings],
@@ -121,9 +118,9 @@
       facility() {
         return this.state.value.facility;
       },
-      users() {
-        return this.state.value.users;
-      },
+      // users() {
+      //   return this.state.value.users;
+      // },
       checkFormDisabled() {
         return (
           this.username === '' ||
@@ -233,9 +230,9 @@
             } else this.$store.dispatch('handleApiError', error);
           });
       },
-      redirectToChannels() {
-        FinishSoUDSyncingResource.finish();
-      },
+      // redirectToChannels() {
+      //   FinishSoUDSyncingResource.finish();
+      // },
     },
     $trs: {
       commaSeparatedPair: {

@@ -1,10 +1,10 @@
 <template>
 
-  <OnboardingForm
-    :header="header"
+  <OnboardingStepBase
+    :title="header"
     :description="formDescription"
-    :disabled="selectedFacilityId === ''"
-    @submit="handleNext"
+    :navDisabled="selectedFacilityId === ''"
+    @continue="handleNext"
   >
     <RadioButtonGroup
       :items="facilities"
@@ -13,7 +13,7 @@
       :itemValue="x => x.id"
       :disabled="false"
     />
-  </OnboardingForm>
+  </OnboardingStepBase>
 
 </template>
 
@@ -22,13 +22,13 @@
 
   import commonSyncElements from 'kolibri.coreVue.mixins.commonSyncElements';
   import { RadioButtonGroup } from 'kolibri.coreVue.componentSets.sync';
-  import OnboardingForm from '../onboarding-forms/OnboardingForm';
+  import OnboardingStepBase from '../OnboardingStepBase';
 
   export default {
-    name: 'SelectFacilityForm',
+    name: 'SelectLODFacilityForm',
     components: {
+      OnboardingStepBase,
       RadioButtonGroup,
-      OnboardingForm,
     },
     mixins: [commonSyncElements],
     data() {
