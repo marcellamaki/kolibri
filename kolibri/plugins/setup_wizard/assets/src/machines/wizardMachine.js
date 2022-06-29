@@ -239,7 +239,7 @@ export const wizardMachine = createMachine({
     // Lod Path - the lodMachine is imported, interpreted and managed in the Lod Setup component
     // This means that
     importLodUsers: {
-      meta: { route: { name: 'IMPORT_LOD' } },
+      meta: { route: { name: 'IMPORT_LOD', step: 0 } },
       on: {
         BACK: 'fullOrLearnOnlyDevice',
       },

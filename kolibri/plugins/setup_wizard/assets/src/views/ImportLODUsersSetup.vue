@@ -5,6 +5,7 @@
     :device.sync="device"
   />
 
+
   <!--
     <BottomAppBar v-if="service.state.matches('selectUsers')">
       <KButton
@@ -27,7 +28,6 @@
   import commonSyncElements from 'kolibri.coreVue.mixins.commonSyncElements';
   import BottomAppBar from 'kolibri.coreVue.components.BottomAppBar';
   import { lodImportMachine } from '../machines/lodImportMachine';
-  import { FinishSoUDSyncingResource } from '../api';
   import ProgressToolbar from './ProgressToolbar';
 
   export default {
@@ -43,7 +43,7 @@
       return {
         service: interpret(lodImportMachine),
         state: lodImportMachine.initialState,
-        total_steps: 4,
+        total_steps: 6,
         stateID: null,
         device: {
           name: '',
@@ -62,22 +62,6 @@
     computed: {
       currentComponent() {
         return this.state.meta[this.stateID].component;
-      },
-      currentStep() {
-        return Number(this.state.meta[this.stateID].step);
-      },
-      currentTitle() {
-        return this.$tr('stepTitle', {
-          step: this.currentStep,
-          total: this.total_steps,
-        });
-      },
-      removeNavIcon() {
-        // TODO disable backwards navigation at the router level
-        return this.currentStep > 2 || this.state.context.users.length > 0;
-      },
-      users() {
-        return this.state.context.users;
       },
     },
 
@@ -101,22 +85,6 @@
     },
     destroyed() {
       this.service.stop();
-    },
-    methods: {
-      previousStep() {
-        if (this.state.matches('selectFacility') || this.state.matches('userCredentials'))
-          this.wizardService.send('BACK');
-        else this.service.send('BACK');
-      },
-      redirectToChannels() {
-        FinishSoUDSyncingResource.finish();
-      },
-    },
-    $trs: {
-      stepTitle: {
-        message: 'Import individual user accounts - {step, number} of {total, number}',
-        context: 'Title that goes on top of the screen to indicate the current step.',
-      },
     },
   };
 

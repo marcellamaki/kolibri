@@ -16,6 +16,7 @@
 <script>
 
   import commonSyncElements from 'kolibri.coreVue.mixins.commonSyncElements';
+  import SelectLODSetupType from '../views/importLODUsers/SelectLODSetupType';
   import ProgressToolbar from './ProgressToolbar';
   import OnboardingStepBase from './OnboardingStepBase';
   import PersonalDataConsentForm from './onboarding-forms/PersonalDataConsentForm';
@@ -25,6 +26,7 @@
   import LoadingTaskPage from './importFacility/LoadingTaskPage';
 
   const stepToComponentMap = {
+    0: SelectLODSetupType,
     1: SelectFacilityForm,
     2: ImportAuthentication,
     3: LoadingTaskPage,
@@ -32,7 +34,7 @@
     5: PersonalDataConsentForm,
   };
 
-  const TOTAL_STEPS = 4;
+  const TOTAL_STEPS = 6;
 
   // Template for the 'Import Facility' workflow, which manages the title
   // and back/forth flow for this group of steps.
@@ -74,6 +76,7 @@
         return stepToComponentMap[step];
       },
       currentStep() {
+        console.log(Number(this.$route.params.step));
         return Number(this.$route.params.step);
       },
       currentStepMessage() {

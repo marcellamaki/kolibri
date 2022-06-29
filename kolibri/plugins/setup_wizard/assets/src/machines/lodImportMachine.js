@@ -14,6 +14,7 @@ const getDevice = data => ({
 });
 
 const assignDevice = assign((_, event) => {
+  console.log(event);
   const _device = getDevice(event.value);
   const _facility = { name: null, id: null, adminuser: null, adminpassword: null };
   if (_device.facilities.length === 1) {
@@ -72,10 +73,10 @@ const registerUsersAndSyncAdmin = assign((context, event) => {
 });
 
 export const lodImportMachine = createMachine({
-  initial: 'selectFacility',
+  initial: 'selectSetupType',
   context: {
-    step: 1,
-    steps: 4,
+    step: 0,
+    steps: 5,
     device: { name: null, id: null, baseurl: null },
     facilities: [],
     facility: { name: null, id: null, adminUser: null, adminPassword: null, adminTask: null },
@@ -86,16 +87,15 @@ export const lodImportMachine = createMachine({
   states: {
     selectSetupType: {
       meta: { step: '0', component: SelectLODSetupType },
+      // TODO: Make setupType method, figure out events to set data
       on: {
-        CONTINUE: { target: 'selectFacility' },
-        DEVICE_DATA: { actions: assignDevice },
+        CONTINUE: { target: 'selectFacility', actions: assignDevice },
       },
     },
     selectFacility: {
       meta: { step: '1', component: SelectFacilityForm },
       on: {
         CONTINUE: { target: 'userCredentials', actions: assignFacility },
-        DEVICE_DATA: { actions: assignDevice }, // only place this exists TODO REMOVE IT
       },
     },
     userCredentials: {
