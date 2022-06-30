@@ -1,10 +1,13 @@
 <template>
 
-  <OnboardingStepBase
-    :title="$tr('importIndividualUsersHeader')"
+  <OnboardingForm
+    :header="$tr('importIndividualUsersHeader')"
     :description="formDescription"
-    :navDisabled="checkFormDisabled"
-    @continue="handleSubmit"
+    :submitText="coreString('importAction')"
+    :disabled="checkFormDisabled"
+    :finishButton="users.length !== 0"
+    @submit="handleSubmit"
+    @click_finish="redirectToChannels"
   >
     <p class="facility-name">
       {{ formatNameAndId(facility.name, facility.id) }}
@@ -74,7 +77,7 @@
       />
     </KModal>
 
-  </OnboardingStepBase>
+  </OnboardingForm>
 
 </template>
 
@@ -87,13 +90,13 @@
   import { DemographicConstants, ERROR_CONSTANTS } from 'kolibri.coreVue.vuex.constants';
   import { TaskResource } from 'kolibri.resources';
   import CatchErrors from 'kolibri.utils.CatchErrors';
-  import { FacilityImportResource } from '../../api';
-  import OnboardingStepBase from '../OnboardingStepBase';
+  import OnboardingForm from '../onboarding-forms/OnboardingForm';
+  import { FacilityImportResource, FinishSoUDSyncingResource } from '../../api';
 
   export default {
     name: 'ImportIndividualUserForm',
     components: {
-      OnboardingStepBase,
+      OnboardingForm,
       PasswordTextbox,
     },
     mixins: [commonSyncElements, commonCoreStrings],
@@ -118,9 +121,9 @@
       facility() {
         return this.state.value.facility;
       },
-      // users() {
-      //   return this.state.value.users;
-      // },
+      users() {
+        return this.state.value.users;
+      },
       checkFormDisabled() {
         return (
           this.username === '' ||
@@ -160,14 +163,14 @@
         });
       },
       handleSubmit() {
-        const task_name = 'kolibri.plugins.setup_wizard.tasks.startprovisionsoud';
+        const task_name = 'kolibri.core.auth.tasks.peeruserimport';
         const password = this.password === '' ? DemographicConstants.NOT_SPECIFIED : this.password;
         const params = {
           type: task_name,
           device_id: this.device.id,
           username: this.username,
           password: password,
-          facility_id: this.facility.id,
+          facility: this.facility.id,
         };
         TaskResource.startTask(params)
           .then(task => {
@@ -230,9 +233,9 @@
             } else this.$store.dispatch('handleApiError', error);
           });
       },
-      // redirectToChannels() {
-      //   FinishSoUDSyncingResource.finish();
-      // },
+      redirectToChannels() {
+        FinishSoUDSyncingResource.finish();
+      },
     },
     $trs: {
       commaSeparatedPair: {
