@@ -387,6 +387,7 @@
         addQuestionToSelection,
         removeQuestionFromSelection,
         selectAllQuestions,
+        toggleQuestionInSelection,
 
         // Computed
         channels,
@@ -424,6 +425,7 @@
         questionList$,
 
         selectAllQuestions,
+        toggleQuestionInSelection,
         saveQuiz,
         updateSection,
         allQuestionsSelected,
