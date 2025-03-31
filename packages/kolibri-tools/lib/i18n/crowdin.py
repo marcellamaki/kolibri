@@ -317,15 +317,31 @@ def pretranslate(branch, project, approve_all=False):
         )
     )
     file_ids = [file["data"]["id"] for file in list_files(project["id"], branch["id"])]
-    body = {"fileIds": file_ids}
+    all_available_langs = available_languages(include_in_context=True)
+    lang_ids = [lang[KEY_CROWDIN_CODE] for lang in all_available_langs]
 
+    # Fetch valid languages from Crowdin for this project
+    valid_langs_response = crowdin_client.languages.list_project_languages(
+        project["id"]
+    )
+    valid_lang_ids = {lang["data"]["id"] for lang in valid_langs_response["data"]}
+    # Filter out invalid language IDs
+    filtered_lang_ids = [lang_id for lang_id in lang_ids if lang_id in valid_lang_ids]
+
+    # Log invalid language IDs (if any)
+    invalid_lang_ids = set(lang_ids) - valid_lang_ids
+    if invalid_lang_ids:
+        logging.warning(f"Invalid language IDs detected: {invalid_lang_ids}")
+
+    kwargs = {}
     if approve_all:
-        body.update({"autoApproveOption": "all"})
+        kwargs.update({"autoApproveOption": "all"})
 
     with handle_api_exception("Pretranslating"):
         response = crowdin_client.translations.apply_pre_translation(
-            project["id"], body
+            project["id"], filtered_lang_ids, file_ids, **kwargs
         )
+
     logging.info(response["data"])
 
 
