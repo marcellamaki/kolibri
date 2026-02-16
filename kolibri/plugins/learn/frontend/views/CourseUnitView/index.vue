@@ -218,6 +218,12 @@
       };
 
       const checkRedirect = async () => {
+        // The course root page is accessible before starting — no resume data needed.
+        // a URL to a "deeper" unit/lesson/resource require the course to have been started.
+        if (!props.unitId) {
+          return false;
+        }
+
         if (!resumeData.value) {
           await fetchResumeData();
         }
