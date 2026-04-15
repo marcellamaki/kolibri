@@ -239,7 +239,7 @@
         filterCourseVisible$,
         filterCourseNotVisible$,
         clearAllFilters$,
-        courseAssignmentDeleted$,
+        courseDeleted$,
         courseDeleteError$,
         courseDetailsAction$,
         editRecipientsAction$,
@@ -333,7 +333,7 @@
           await CourseSessionResource.deleteModel({ id: course.id });
           // Remove course from local state instead of refetching all courses
           removeCourse(course.id);
-          createSnackbar(courseAssignmentDeleted$());
+          createSnackbar(courseDeleted$());
           courseToDelete.value = null;
         } catch (error) {
           createSnackbar(courseDeleteError$());

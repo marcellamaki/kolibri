@@ -114,14 +114,6 @@ export const coursesStrings = createTranslator('CoursesStrings', {
     message: 'There was an error deleting the course',
     context: 'Error message shown when a course could not be removed',
   },
-  courseAssignmentDeleted: {
-    message: 'Course assignment deleted',
-    context: 'Snackbar message when a course has been deleted',
-  },
-  courseAssignmentUpdateError: {
-    message: 'There was an error updating the course assignment',
-    context: 'Error message shown when updating a course assignment fails',
-  },
   deleteCourseConfirmation: {
     message: 'Delete course assignment "{title}"?',
     context: 'Confirmation prompt for deleting a course assignment from a class',
@@ -451,7 +443,7 @@ export const coursesStrings = createTranslator('CoursesStrings', {
     context:
       'Risk level badge shown in the Learners report for learners whose aggregate score is above 60%',
   },
-  riskLevelLabel: {
+  unitProgressLabel: {
     message: 'Unit progress',
     context: 'Column header for the unit progress indicator in the Learners report table',
   },

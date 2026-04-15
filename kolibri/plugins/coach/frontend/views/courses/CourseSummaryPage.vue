@@ -374,7 +374,6 @@
   import AccordionContainer from 'kolibri-common/components/accordion/AccordionContainer';
   import AccordionItem from 'kolibri-common/components/accordion/AccordionItem';
   import { themePalette, themeTokens } from 'kolibri-design-system/lib/styles/theme';
-  import { isRtl, currentLanguage } from 'kolibri/utils/i18n';
   import useKResponsiveWindow from 'kolibri-design-system/lib/composables/useKResponsiveWindow';
   import ContentNodeResource from 'kolibri-common/apiResources/ContentNodeResource';
   import CourseSessionResource from 'kolibri-common/apiResources/CourseSessionResource';
@@ -444,7 +443,6 @@
         editRecipientsAction$,
         courseDeleted$,
         courseDeleteError$,
-        courseAssignmentUpdateError$,
         deleteCourseFromSummaryTitle$,
         deleteCourseFromSummaryConfirmation$,
       } = coursesStrings;
@@ -502,12 +500,6 @@
       const coachPageTitle = computed(() =>
         [course.value?.title, className.value].filter(Boolean).join(' - '),
       );
-
-      const coachPageTitle = computed(() => {
-        const parts = [course.value?.title, store.state.classSummary.name].filter(Boolean);
-        if (isRtl(currentLanguage)) parts.reverse();
-        return parts.join(' - ');
-      });
 
       // Learner counts derived from the active unit's report
       // (activeUnitReport is defined below after unitReportInfo is set up)
