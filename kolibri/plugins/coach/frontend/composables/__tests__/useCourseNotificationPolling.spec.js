@@ -122,4 +122,38 @@ describe('useCourseNotificationPolling', () => {
     await nextTick();
     expect(callback).toHaveBeenCalledTimes(1);
   });
+
+  describe('fallback interval polling', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.clearAllTimers();
+      jest.useRealTimers();
+    });
+
+    it('refetches on a fixed interval even without a matching notification', () => {
+      const store = makeStore();
+      const callback = jest.fn();
+
+      useCourseNotificationPolling(store, ref('session-123'), callback);
+
+      jest.advanceTimersByTime(20000);
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      jest.advanceTimersByTime(20000);
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not poll while the course session is unknown', () => {
+      const store = makeStore();
+      const callback = jest.fn();
+
+      useCourseNotificationPolling(store, ref(null), callback);
+
+      jest.advanceTimersByTime(60000);
+      expect(callback).not.toHaveBeenCalled();
+    });
+  });
 });

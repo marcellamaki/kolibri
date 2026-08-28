@@ -1,4 +1,8 @@
-import { watch } from 'vue';
+import { watch, onUnmounted } from 'vue';
+
+// LOD-synced progress doesn't generate notifications associated with
+// the course session, so we need to poll for updates
+const FALLBACK_POLL_INTERVAL_MS = 20000;
 
 export default function useCourseNotificationPolling(
   store,
@@ -25,4 +29,11 @@ export default function useCourseNotificationPolling(
       }
     },
   );
+
+  const intervalId = setInterval(() => {
+    if (courseSessionId.value) {
+      onRelevantNotifications();
+    }
+  }, FALLBACK_POLL_INTERVAL_MS);
+  onUnmounted(() => clearInterval(intervalId));
 }
