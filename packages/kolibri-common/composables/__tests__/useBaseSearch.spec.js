@@ -6,12 +6,22 @@ import { ContentNodeKinds, LearningActivities } from 'kolibri/constants';
 import useUser, { useUserMock } from 'kolibri/composables/useUser'; // eslint-disable-line
 import { useRoute, useRouter } from 'vue-router/composables'; // eslint-disable-line
 import Modalities from 'kolibri-constants/Modalities';
+import { searchAndFilterStrings } from 'kolibri-common/strings/searchAndFilterStrings';
 import useBaseSearch, { injectBaseSearch } from '../useBaseSearch';
+
+const mockSendPoliteMessage = jest.fn();
 
 jest.mock('kolibri/composables/useUser');
 jest.mock('vue-router/composables', () => ({
   useRoute: jest.fn(),
   useRouter: jest.fn(),
+}));
+jest.mock('kolibri-design-system/lib/composables/useKLiveRegion', () => ({
+  __esModule: true,
+  default: jest.fn(() => ({
+    sendPoliteMessage: mockSendPoliteMessage,
+    sendAssertiveMessage: jest.fn(),
+  })),
 }));
 
 const name = 'not important';
@@ -630,6 +640,74 @@ describe(`useBaseSearch`, () => {
       unmount();
       jest.advanceTimersByTime(300);
       expect(ContentNodeResource.list).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('screen reader announcements', () => {
+    const { filterToggledResultsCount$ } = searchAndFilterStrings;
+
+    beforeEach(() => {
+      mockSendPoliteMessage.mockClear();
+    });
+
+    // Typing and submitting a keyword search, picking an autocomplete
+    // suggestion, and toggling a filter pill all funnel through the same
+    // `searchTerms` change, so this one announcement covers every entry
+    // point rather than each component announcing it separately.
+    it('announces the result count and the keyword itself once a keyword search settles', async () => {
+      ContentNodeResource.list.mockReturnValue(
+        Promise.resolve({
+          results: [
+            { id: '1', content_id: 'a' },
+            { id: '2', content_id: 'b' },
+          ],
+          labels: {},
+        }),
+      );
+      const api = mountSearch().getApi();
+
+      api.setKeywords('math');
+      await nextTick();
+      await nextTick();
+
+      expect(mockSendPoliteMessage).toHaveBeenCalledWith(
+        filterToggledResultsCount$({ count: 2, filterLabels: 'math' }),
+      );
+    });
+
+    it('announces the result count and active filter labels once a filter toggle settles', async () => {
+      ContentNodeResource.list.mockReturnValue(
+        Promise.resolve({ results: [{ id: '1' }], labels: {} }),
+      );
+      const api = mountSearch().getApi();
+
+      api.toggleFilter({ key: 'learning_activities', value: LearningActivities.WATCH });
+      await nextTick();
+      await nextTick();
+
+      expect(mockSendPoliteMessage).toHaveBeenCalledWith(
+        filterToggledResultsCount$({ count: 1, filterLabels: 'Watch' }),
+      );
+    });
+
+    it('does not announce anything once clearing settles back to no search at all', async () => {
+      ContentNodeResource.list.mockReturnValue(
+        Promise.resolve({ results: [{ id: '1' }], labels: {} }),
+      );
+      const api = mountSearch().getApi();
+
+      api.setKeywords('math');
+      await nextTick();
+      await nextTick();
+      mockSendPoliteMessage.mockClear();
+
+      // Clearing settles back to browsing with no search applied at all —
+      // nothing to read out, unlike a genuine result count change.
+      api.clearSearch();
+      await nextTick();
+      await nextTick();
+
+      expect(mockSendPoliteMessage).not.toHaveBeenCalled();
     });
   });
 });

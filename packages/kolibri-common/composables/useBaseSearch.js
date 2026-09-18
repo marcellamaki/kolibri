@@ -16,8 +16,11 @@ import {
 } from 'kolibri/constants';
 import useUser from 'kolibri/composables/useUser';
 import { currentLanguage } from 'kolibri/utils/i18n';
+import { coreString } from 'kolibri/uiText/commonCoreStrings';
+import useKLiveRegion from 'kolibri-design-system/lib/composables/useKLiveRegion';
 
 import Modalities from 'kolibri-constants/Modalities';
+import { searchAndFilterStrings } from 'kolibri-common/strings/searchAndFilterStrings';
 import { deduplicateResources } from '../utils/contentNode';
 import useFuzzyMetadataSearch from './useFuzzyMetadataSearch';
 
@@ -486,6 +489,33 @@ export default function useBaseSearch({
     return scoped[key].includes(value);
   }
 
+  // Human-readable label for an applied filter's value, e.g. for rendering a
+  // filter pill or describing the currently applied filters to a screen
+  // reader. Resolved the same way regardless of consumer, so a pill's visible
+  // label and an accessibility announcement never drift apart.
+  function labelForFilter(key, value) {
+    if (key === 'keywords') {
+      return value;
+    }
+    if (key === 'learning_activities') {
+      const activityKey = activitiesLookup[value];
+      return activityKey ? coreString(activityKey) : value;
+    }
+    if (key === 'categories') {
+      // CategoriesLookup is the flat value→key map for every category at any
+      // depth, so this resolves nested subcategory values too.
+      const categoryKey = CategoriesLookup[value];
+      return categoryKey ? coreString(categoryKey) : value;
+    }
+    if (key === 'languages') {
+      // Language values are codes (e.g. 'en'), which aren't in coreString's
+      // metadata lookup — resolve the human-readable name from the catalog.
+      const lang = (get(languagesList) || []).find(l => l.id === value);
+      return lang ? lang.lang_name : value;
+    }
+    return coreString(value);
+  }
+
   function clearSearch() {
     set(searchTerms, {});
   }
@@ -537,9 +567,14 @@ export default function useBaseSearch({
     set(searchTerms, { ...terms, keywords });
   }
 
+  // Set once a user-initiated search change is in flight, so the announcement
+  // watcher below (which needs `searchLoading`/`results`, defined further
+  // down) knows to speak once that specific search settles.
+  const pendingSearchAnnouncement = ref(false);
   watch(searchTerms, (newValue, oldValue) => {
     if (!isEqual(newValue, oldValue)) {
       set(keywordsInput, newValue.keywords || '');
+      set(pendingSearchAnnouncement, true);
       search();
     }
   });
@@ -575,6 +610,23 @@ export default function useBaseSearch({
   const searchLoading = computed(
     () => get(searchResultsLoading) || get(globalLabelsLoading) || get(scopedLabelsLoading),
   );
+
+  const { sendPoliteMessage } = useKLiveRegion();
+  const { filterToggledResultsCount$ } = searchAndFilterStrings;
+
+  // announce search results explicitly on every change
+  watch(searchLoading, (loading, wasLoading) => {
+    if (wasLoading && !loading && get(pendingSearchAnnouncement)) {
+      set(pendingSearchAnnouncement, false);
+      if (!get(displayingSearchResults)) {
+        return;
+      }
+      const filterLabels = appliedFilters()
+        .map(({ key, value }) => labelForFilter(key, value))
+        .join(', ');
+      sendPoliteMessage(filterToggledResultsCount$({ count: get(results).length, filterLabels }));
+    }
+  });
 
   function ensureGlobalLabels() {
     set(globalLabelsLoading, true);
@@ -661,6 +713,7 @@ export default function useBaseSearch({
   provide('availableLanguages', languagesList);
   provide('hasGlobalLabels', hasGlobalLabels);
   provide('searchLoading', searchLoading);
+  provide('displayingSearchResults', displayingSearchResults);
 
   // Provide an object of searchable labels
   // This is a manifest of all the labels that could still be selected and produce search results
@@ -675,6 +728,7 @@ export default function useBaseSearch({
   // still selectable in the current search?" can ask one place.
   provide('isFilterActive', isFilterActive);
   provide('isLabelAvailable', isLabelAvailable);
+  provide('labelForFilter', labelForFilter);
   provide('toggleFilter', toggleFilter);
   provide('appliedFilters', appliedFilters);
   provide('clearSearch', clearSearch);
@@ -725,11 +779,13 @@ export function injectBaseSearch() {
   const activeSearchTerms = inject('activeSearchTerms');
   const isFilterActive = inject('isFilterActive');
   const isLabelAvailable = inject('isLabelAvailable');
+  const labelForFilter = inject('labelForFilter');
   const toggleFilter = inject('toggleFilter');
   const appliedFilters = inject('appliedFilters');
   const clearSearch = inject('clearSearch');
   const results = inject('results');
   const searchLoading = inject('searchLoading');
+  const displayingSearchResults = inject('displayingSearchResults');
   const keyWordAutoCompleteHandler = inject('keyWordAutoCompleteHandler');
   const autoCompleteSuggestions = inject('autoCompleteSuggestions');
   const getMatchedWordSegments = inject('getMatchedWordSegments');
@@ -750,11 +806,13 @@ export function injectBaseSearch() {
     activeSearchTerms,
     isFilterActive,
     isLabelAvailable,
+    labelForFilter,
     toggleFilter,
     appliedFilters,
     clearSearch,
     results,
     searchLoading,
+    displayingSearchResults,
     keyWordAutoCompleteHandler,
     autoCompleteSuggestions,
     getMatchedWordSegments,
