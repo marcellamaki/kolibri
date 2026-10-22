@@ -3,6 +3,8 @@
   <div
     role="presentation"
     @keyup.esc="$emit('close')"
+    @focusin="handleFocusin"
+    @focusout="handleFocusout"
   >
     <ul
       role="menu"
@@ -102,9 +104,23 @@
       });
     },
     destroyed() {
-      window.setTimeout(() => this.lastFocus.focus());
+      // Only hand focus back if the menu held it; a menu that is destroyed
+      // while hidden (e.g. a re-rendered card) must not steal focus.
+      if (this.hasFocus) {
+        window.setTimeout(() => this.lastFocus.focus());
+      }
     },
     methods: {
+      handleFocusin() {
+        this.hasFocus = true;
+      },
+      handleFocusout(event) {
+        // Removing the menu from the DOM blurs it with no relatedTarget, and
+        // that removal is exactly when focus should be handed back
+        if (event.relatedTarget) {
+          this.hasFocus = false;
+        }
+      },
       /**
        * Focuses on correct last element for FocusTrap depending on content
        * rendered in CoreMenu.
